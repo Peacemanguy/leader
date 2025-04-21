@@ -1,0 +1,368 @@
+:root {
+  --primary-color: #065fd4;
+  --primary-hover: #0356c3;
+  --secondary-color: #f8f8f8;
+  --text-color: #0f0f0f;
+  --text-secondary: #606060;
+  --border-color: #e0e0e0;
+  --gold: #ffd700;
+  --silver: #c0c0c0;
+  --bronze: #cd7f32;
+  --background: #f9f9f9;
+  --card-bg: #ffffff;
+  --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  --animation-speed: 0.3s;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Roboto', Arial, sans-serif;
+  background: var(--background);
+  color: var(--text-color);
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 800px;
+  margin: 40px auto;
+  background: var(--card-bg);
+  padding: 24px 32px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+header {
+  text-align: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+  color: var(--text-color);
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+/* Tabs styling */
+.tabs-container {
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.tab {
+  padding: 12px 24px;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-secondary);
+  position: relative;
+  transition: color var(--animation-speed);
+}
+
+.tab:hover {
+  color: var(--primary-color);
+}
+
+.tab.active {
+  color: var(--primary-color);
+}
+
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: var(--primary-color);
+}
+
+/* Leaderboard styling */
+.leaderboard-section {
+  display: none;
+  margin-bottom: 32px;
+}
+
+.leaderboard-section.active {
+  display: block;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.sort-options {
+  display: flex;
+  gap: 8px;
+}
+
+.sort-option {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 16px;
+  transition: all var(--animation-speed);
+}
+
+.sort-option:hover {
+  background: var(--secondary-color);
+}
+
+.sort-option.active {
+  background: var(--secondary-color);
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+/* Poll items */
+.poll-items {
+  margin-top: 16px;
+}
+
+.poll-item {
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border-color);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.poll-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.poll-item.highlight {
+  animation: highlight 1s ease-in-out;
+}
+
+@keyframes highlight {
+  0%, 100% { background-color: var(--card-bg); }
+  50% { background-color: rgba(6, 95, 212, 0.1); }
+}
+
+.poll-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.poll-item-name {
+  font-weight: 500;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.rank {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 24px;
+  font-size: 14px;
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+.rank-1 {
+  background-color: var(--gold);
+  color: #000;
+}
+
+.rank-2 {
+  background-color: var(--silver);
+  color: #000;
+}
+
+.rank-3 {
+  background-color: var(--bronze);
+  color: #000;
+}
+
+.poll-item-votes {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.progress-container {
+  height: 8px;
+  background-color: var(--secondary-color);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: var(--primary-color);
+  border-radius: 4px;
+  transition: width 0.5s ease-in-out;
+}
+
+.poll-item-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.vote-percentage {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.vote-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 18px;
+  padding: 6px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--animation-speed);
+}
+
+.vote-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+.vote-btn:disabled {
+  background-color: var(--text-secondary);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.vote-btn.voted {
+  background-color: var(--text-secondary);
+}
+
+/* Add form */
+.add-form-container {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.add-form {
+  display: flex;
+  gap: 8px;
+}
+
+.add-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.add-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.add-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--animation-speed);
+}
+
+.add-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+.error {
+  color: #d93025;
+  font-size: 14px;
+  margin-top: 8px;
+  display: block;
+}
+
+/* Info panel */
+.info-panel {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.info-item i {
+  margin-right: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    margin: 20px 16px;
+    padding: 16px;
+  }
+  
+  .add-form {
+    flex-direction: column;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .sort-options {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+}
