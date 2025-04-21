@@ -4,7 +4,9 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "start-admin": "node admin_server.js",
+    "start-both": "concurrently \"npm run start\" \"npm run start-admin\""
   },
   "keywords": [],
   "author": "",
@@ -12,7 +14,11 @@
   "dependencies": {
     "body-parser": "^2.2.0",
     "express": "^5.1.0",
+    "express-session": "^1.17.3",
     "request-ip": "^3.3.0"
   },
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
 }

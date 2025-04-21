@@ -10,7 +10,7 @@ const PORT         = process.env.PORT || 3000;
 const DATA_FILE    = path.join(__dirname, 'data.json');
 const IP_FILE      = path.join(__dirname, 'ips.json');
 
-const CATEGORIES = ["6gb", "12gb", "16gb", "24gb", "48gb"];
+const CATEGORIES = ["6gb", "12gb", "16gb", "24gb", "48gb", "72gb", "96gb"];
 function validateCategory(cat) {
   return CATEGORIES.includes(cat);
 }
@@ -42,6 +42,26 @@ function oneVotePerIP(req, res, next) {
   next();
 }
 
+/* ---------- Ensure IP tracking is properly formatted ---------- */
+function ensureValidIpTracking() {
+  const ips = readJson(IP_FILE, {});
+  let changed = false;
+  
+  // Convert any string values to objects
+  Object.keys(ips).forEach(key => {
+    if (typeof ips[key] === 'string') {
+      ips[key] = {};
+      changed = true;
+    }
+  });
+  
+  if (changed) {
+    writeJson(IP_FILE, ips);
+  }
+  
+  return ips;
+}
+
 /* ---------- API ---------- */
 app.get('/api/entries', (req, res) => {
   const category = req.query.category;
@@ -65,9 +85,9 @@ app.post('/api/add', (req, res) => {
   if (list.find(e => e.name.toLowerCase() === name.toLowerCase()))
     return res.status(400).json({ error: 'Entry already exists' });
 
-  const ips = readJson(IP_FILE, {});
+  const ips = ensureValidIpTracking();
   const ipKey = hash(req.clientIp || 'unknown');
-  if (!ips[ipKey]) ips[ipKey] = {};
+  if (!ips[ipKey] || typeof ips[ipKey] !== 'object') ips[ipKey] = {};
   const prevVotedId = ips[ipKey][category];
 
   // If user has already voted for another entry, decrement its votes
@@ -98,9 +118,9 @@ app.post('/api/vote', (req, res) => {
   const item = list.find(e => e.id === id);
   if (!item) return res.status(404).json({ error: 'Entry not found' });
 
-  const ips = readJson(IP_FILE, {});
+  const ips = ensureValidIpTracking();
   const ipKey = hash(req.clientIp || 'unknown');
-  if (!ips[ipKey]) ips[ipKey] = {};
+  if (!ips[ipKey] || typeof ips[ipKey] !== 'object') ips[ipKey] = {};
   const prevVotedId = ips[ipKey][category];
 
   if (prevVotedId === id) {

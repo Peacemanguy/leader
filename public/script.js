@@ -4,7 +4,9 @@ const CATEGORIES = [
   { key: "12gb", label: "12GB VRAM" },
   { key: "16gb", label: "16GB VRAM" },
   { key: "24gb", label: "24GB VRAM" },
-  { key: "48gb", label: "48GB VRAM" }
+  { key: "48gb", label: "48GB VRAM" },
+  { key: "72gb", label: "72GB VRAM" },
+  { key: "96gb", label: "96GB VRAM" }
 ];
 
 // ---- State management ----
