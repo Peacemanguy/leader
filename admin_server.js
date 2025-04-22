@@ -7,9 +7,9 @@ const session = require('express-session');
 
 // Constants
 const app = express();
-const PORT = 6969;
-const DATA_FILE = path.join(__dirname, 'data.json');
-const IP_FILE = path.join(__dirname, 'ips.json');
+const PORT = process.env.ADMIN_PORT || 6969;
+const DATA_FILE = path.join(__dirname, 'data', 'data.json');
+const IP_FILE = path.join(__dirname, 'data', 'ips.json');
 const CATEGORIES = ["6gb", "12gb", "16gb", "24gb", "48gb", "72gb", "96gb"];
 
 // Admin credentials - in a real app, store these securely

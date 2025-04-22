@@ -7,8 +7,8 @@ const requestIp   = require('request-ip');       // NEW
 const crypto      = require('crypto');           // we’ll hash IPs before saving
 
 const PORT         = process.env.PORT || 3000;
-const DATA_FILE    = path.join(__dirname, 'data.json');
-const IP_FILE      = path.join(__dirname, 'ips.json');
+const DATA_FILE    = path.join(__dirname, 'data', 'data.json');
+const IP_FILE      = path.join(__dirname, 'data', 'ips.json');
 
 const CATEGORIES = ["6gb", "12gb", "16gb", "24gb", "48gb", "72gb", "96gb"];
 function validateCategory(cat) {
