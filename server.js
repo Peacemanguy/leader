@@ -4,7 +4,8 @@ const bodyParser  = require('body-parser');
 const fs          = require('fs');
 const path        = require('path');
 const requestIp   = require('request-ip');       // NEW
-const crypto      = require('crypto');           // we’ll hash IPs before saving
+const crypto      = require('crypto');           // we'll hash IPs before saving
+const archiver    = require('./leaderboard_archiver');
 
 const PORT         = process.env.PORT || 3000;
 const DATA_FILE    = path.join(__dirname, 'data', 'data.json');
@@ -143,6 +144,74 @@ app.post('/api/vote', (req, res) => {
   writeJson(IP_FILE, ips);
 
   res.json(item);
+});
+
+/* ---------- Archive API ---------- */
+// Get list of archived weeks
+app.get('/api/archives/weeks', (req, res) => {
+  try {
+    const weeks = archiver.getArchivedWeeks();
+    res.json(weeks);
+  } catch (error) {
+    console.error('Error getting archived weeks:', error);
+    res.status(500).json({ error: 'Failed to retrieve archived weeks' });
+  }
+});
+
+// Get archived data for a specific week
+app.get('/api/archives/week/:weekId', (req, res) => {
+  try {
+    const { weekId } = req.params;
+    const archive = archiver.getArchivedWeek(weekId);
+    
+    if (!archive) {
+      return res.status(404).json({ error: 'Archive not found for the specified week' });
+    }
+    
+    res.json(archive);
+  } catch (error) {
+    console.error('Error getting archived week:', error);
+    res.status(500).json({ error: 'Failed to retrieve archived data' });
+  }
+});
+
+// Get archived data for a specific week and category
+app.get('/api/archives/week/:weekId/category/:category', (req, res) => {
+  try {
+    const { weekId, category } = req.params;
+    const archive = archiver.getArchivedWeek(weekId);
+    
+    if (!archive) {
+      return res.status(404).json({ error: 'Archive not found for the specified week' });
+    }
+    
+    if (!validateCategory(category)) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
+    
+    const entries = (archive.data[category] || []).sort((a, b) => b.votes - a.votes);
+    res.json(entries);
+  } catch (error) {
+    console.error('Error getting archived category:', error);
+    res.status(500).json({ error: 'Failed to retrieve archived data' });
+  }
+});
+
+// Get archived data for a date range
+app.get('/api/archives/range', (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'Both startDate and endDate are required' });
+    }
+    
+    const archives = archiver.getArchivedRange(startDate, endDate);
+    res.json(archives);
+  } catch (error) {
+    console.error('Error getting archived range:', error);
+    res.status(500).json({ error: 'Failed to retrieve archived data for the specified range' });
+  }
 });
 
 /* ---------- start ---------- */

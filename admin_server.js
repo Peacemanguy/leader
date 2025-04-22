@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const session = require('express-session');
+const moment = require('moment');
+const archiver = require('./leaderboard_archiver');
 
 // Constants
 const app = express();
@@ -184,12 +186,17 @@ app.get('/admin/dashboard', authenticate, (req, res) => {
                 .btn-edit { background-color: #2196F3; }
                 .btn-delete { background-color: #f44336; }
                 .logout { text-decoration: none; color: #f44336; }
+                .nav-links { display: flex; gap: 15px; align-items: center; }
+                .nav-link { text-decoration: none; color: #2196F3; }
             </style>
         </head>
         <body>
             <div class="header">
                 <h1>Poll Admin Dashboard</h1>
-                <a href="/admin/logout" class="logout">Logout</a>
+                <div class="nav-links">
+                    <a href="/admin/archives" class="nav-link">View Archives</a>
+                    <a href="/admin/logout" class="logout">Logout</a>
+                </div>
             </div>
             
             ${categoriesHtml}
@@ -321,6 +328,326 @@ app.post('/admin/delete/:category/:id', authenticate, (req, res) => {
     }
     
     res.redirect('/admin/dashboard');
+});
+
+// Archives Dashboard
+app.get('/admin/archives', authenticate, (req, res) => {
+    const archivedWeeks = archiver.getArchivedWeeks();
+    
+    let archivesHtml = '';
+    
+    if (archivedWeeks.length === 0) {
+        archivesHtml = '<p>No archived data available yet.</p>';
+    } else {
+        let tableRows = archivedWeeks.map(weekId => {
+            const archive = archiver.getArchivedWeek(weekId);
+            if (!archive) return '';
+            
+            return `
+                <tr>
+                    <td>${escapeHtml(archive.weekId)}</td>
+                    <td>${escapeHtml(archive.startDate)}</td>
+                    <td>${escapeHtml(archive.endDate)}</td>
+                    <td>${new Date(archive.archivedAt).toLocaleString()}</td>
+                    <td>
+                        <a href="/admin/archives/week/${archive.weekId}" class="btn btn-edit">View</a>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        
+        archivesHtml = `
+            <h2>Archived Leaderboards</h2>
+            <div class="archive-search">
+                <h3>Search Archives by Date Range</h3>
+                <form action="/admin/archives/search" method="GET">
+                    <div class="form-group">
+                        <label for="startDate">Start Date:</label>
+                        <input type="date" id="startDate" name="startDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="endDate">End Date:</label>
+                        <input type="date" id="endDate" name="endDate" required>
+                    </div>
+                    <button type="submit" class="btn btn-edit">Search</button>
+                </form>
+            </div>
+            
+            <h3>All Archived Weeks</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Week ID</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Archived At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableRows}
+                </tbody>
+            </table>
+            
+            <div class="archive-actions">
+                <form action="/admin/archives/create" method="POST" onsubmit="return confirm('Are you sure you want to archive the current leaderboard data?')">
+                    <button type="submit" class="btn btn-edit">Archive Current Week</button>
+                </form>
+            </div>
+        `;
+    }
+    
+    res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Archived Leaderboards</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 0; padding: 20px; line-height: 1.6; }
+                .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+                h1 { color: #333; margin: 0; }
+                h2 { color: #333; margin-top: 30px; }
+                h3 { color: #555; margin-top: 20px; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                table, th, td { border: 1px solid #ddd; }
+                th { background-color: #f2f2f2; padding: 10px; text-align: left; }
+                td { padding: 10px; }
+                .btn { display: inline-block; padding: 5px 10px; margin-right: 5px; text-decoration: none; border-radius: 3px; color: white; border: none; cursor: pointer; }
+                .btn-edit { background-color: #2196F3; }
+                .btn-delete { background-color: #f44336; }
+                .logout { text-decoration: none; color: #f44336; }
+                .nav-links { display: flex; gap: 15px; align-items: center; }
+                .nav-link { text-decoration: none; color: #2196F3; }
+                .archive-search { margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-radius: 5px; }
+                .form-group { margin-bottom: 15px; }
+                .form-group label { display: block; margin-bottom: 5px; }
+                .form-group input { padding: 8px; width: 200px; }
+                .archive-actions { margin-top: 20px; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Archived Leaderboards</h1>
+                <div class="nav-links">
+                    <a href="/admin/dashboard" class="nav-link">Back to Dashboard</a>
+                    <a href="/admin/logout" class="logout">Logout</a>
+                </div>
+            </div>
+            
+            ${archivesHtml}
+        </body>
+        </html>
+    `);
+});
+
+// View specific archived week
+app.get('/admin/archives/week/:weekId', authenticate, (req, res) => {
+    const { weekId } = req.params;
+    const archive = archiver.getArchivedWeek(weekId);
+    
+    if (!archive) {
+        return res.status(404).send('Archive not found');
+    }
+    
+    let categoriesHtml = '';
+    
+    CATEGORIES.forEach(category => {
+        const entries = archive.data[category] || [];
+        const sortedEntries = [...entries].sort((a, b) => b.votes - a.votes);
+        
+        let tableRows = sortedEntries.map((entry) => `
+            <tr>
+                <td>${escapeHtml(entry.id)}</td>
+                <td>${escapeHtml(entry.name)}</td>
+                <td>${entry.votes}</td>
+            </tr>
+        `).join('');
+        
+        categoriesHtml += `
+            <div class="category-section">
+                <h2>${category} Category</h2>
+                ${sortedEntries.length > 0 ? `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Votes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+                ` : '<p>No entries in this category.</p>'}
+            </div>
+        `;
+    });
+    
+    res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Archived Week: ${weekId}</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 0; padding: 20px; line-height: 1.6; }
+                .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+                h1 { color: #333; margin: 0; }
+                h2 { color: #333; margin-top: 30px; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                table, th, td { border: 1px solid #ddd; }
+                th { background-color: #f2f2f2; padding: 10px; text-align: left; }
+                td { padding: 10px; }
+                .category-section { margin-bottom: 30px; }
+                .btn { display: inline-block; padding: 5px 10px; margin-right: 5px; text-decoration: none; border-radius: 3px; color: white; border: none; cursor: pointer; }
+                .btn-edit { background-color: #2196F3; }
+                .nav-links { display: flex; gap: 15px; align-items: center; }
+                .nav-link { text-decoration: none; color: #2196F3; }
+                .archive-meta { background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+                .archive-meta p { margin: 5px 0; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Archived Week: ${weekId}</h1>
+                <div class="nav-links">
+                    <a href="/admin/archives" class="nav-link">Back to Archives</a>
+                    <a href="/admin/dashboard" class="nav-link">Back to Dashboard</a>
+                    <a href="/admin/logout" class="logout">Logout</a>
+                </div>
+            </div>
+            
+            <div class="archive-meta">
+                <p><strong>Week ID:</strong> ${archive.weekId}</p>
+                <p><strong>Start Date:</strong> ${archive.startDate}</p>
+                <p><strong>End Date:</strong> ${archive.endDate}</p>
+                <p><strong>Archived At:</strong> ${new Date(archive.archivedAt).toLocaleString()}</p>
+            </div>
+            
+            ${categoriesHtml}
+        </body>
+        </html>
+    `);
+});
+
+// Search archives by date range
+app.get('/admin/archives/search', authenticate, (req, res) => {
+    const { startDate, endDate } = req.query;
+    
+    if (!startDate || !endDate) {
+        return res.redirect('/admin/archives');
+    }
+    
+    try {
+        const archives = archiver.getArchivedRange(startDate, endDate);
+        
+        let resultsHtml = '';
+        
+        if (archives.length === 0) {
+            resultsHtml = '<p>No archives found for the specified date range.</p>';
+        } else {
+            let tableRows = archives.map(archive => `
+                <tr>
+                    <td>${escapeHtml(archive.weekId)}</td>
+                    <td>${escapeHtml(archive.startDate)}</td>
+                    <td>${escapeHtml(archive.endDate)}</td>
+                    <td>${new Date(archive.archivedAt).toLocaleString()}</td>
+                    <td>
+                        <a href="/admin/archives/week/${archive.weekId}" class="btn btn-edit">View</a>
+                    </td>
+                </tr>
+            `).join('');
+            
+            resultsHtml = `
+                <h3>Search Results</h3>
+                <p>Found ${archives.length} archive(s) between ${startDate} and ${endDate}</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Week ID</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Archived At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        res.send(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Archive Search Results</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; line-height: 1.6; }
+                    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+                    h1 { color: #333; margin: 0; }
+                    h3 { color: #555; margin-top: 20px; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                    table, th, td { border: 1px solid #ddd; }
+                    th { background-color: #f2f2f2; padding: 10px; text-align: left; }
+                    td { padding: 10px; }
+                    .btn { display: inline-block; padding: 5px 10px; margin-right: 5px; text-decoration: none; border-radius: 3px; color: white; border: none; cursor: pointer; }
+                    .btn-edit { background-color: #2196F3; }
+                    .nav-links { display: flex; gap: 15px; align-items: center; }
+                    .nav-link { text-decoration: none; color: #2196F3; }
+                    .search-form { margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-radius: 5px; }
+                    .form-group { margin-bottom: 15px; }
+                    .form-group label { display: block; margin-bottom: 5px; }
+                    .form-group input { padding: 8px; width: 200px; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>Archive Search Results</h1>
+                    <div class="nav-links">
+                        <a href="/admin/archives" class="nav-link">Back to Archives</a>
+                        <a href="/admin/dashboard" class="nav-link">Back to Dashboard</a>
+                        <a href="/admin/logout" class="logout">Logout</a>
+                    </div>
+                </div>
+                
+                <div class="search-form">
+                    <h3>Search Archives by Date Range</h3>
+                    <form action="/admin/archives/search" method="GET">
+                        <div class="form-group">
+                            <label for="startDate">Start Date:</label>
+                            <input type="date" id="startDate" name="startDate" value="${startDate}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="endDate">End Date:</label>
+                            <input type="date" id="endDate" name="endDate" value="${endDate}" required>
+                        </div>
+                        <button type="submit" class="btn btn-edit">Search</button>
+                    </form>
+                </div>
+                
+                ${resultsHtml}
+            </body>
+            </html>
+        `);
+    } catch (error) {
+        console.error('Error searching archives:', error);
+        res.redirect('/admin/archives?error=1');
+    }
+});
+
+// Manually create an archive
+app.post('/admin/archives/create', authenticate, (req, res) => {
+    try {
+        const weekId = archiver.archiveCurrentWeek();
+        // Reset votes after archiving
+        archiver.resetLeaderboard();
+        res.redirect(`/admin/archives/week/${weekId}`);
+    } catch (error) {
+        console.error('Error creating archive:', error);
+        res.redirect('/admin/archives?error=1');
+    }
 });
 
 // Helper function to escape HTML (prevent XSS)

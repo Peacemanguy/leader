@@ -343,6 +343,158 @@ h1 {
   margin-right: 8px;
 }
 
+/* View toggle */
+.view-toggle {
+  display: flex;
+  justify-content: center;
+  margin-top: 15px;
+}
+
+.view-btn {
+  background-color: var(--secondary-color);
+  border: none;
+  padding: 8px 16px;
+  margin: 0 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.view-btn.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.view-btn:hover:not(.active) {
+  background-color: var(--border-color);
+}
+
+/* Archives view */
+#archives-view {
+  padding: 20px;
+}
+
+.archives-container {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.archives-controls {
+  margin-bottom: 20px;
+}
+
+.archives-selector {
+  margin-bottom: 20px;
+}
+
+.archives-selector label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.archives-selector select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: white;
+}
+
+.date-range-selector {
+  background-color: var(--secondary-color);
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.date-range-selector h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.date-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.date-input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.date-input label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.date-input input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.search-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.search-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+#archive-results {
+  background-color: white;
+  border-radius: 4px;
+  padding: 15px;
+  border: 1px solid var(--border-color);
+}
+
+.archive-week-info {
+  background-color: var(--secondary-color);
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.archive-week-info p {
+  margin: 5px 0;
+}
+
+.archive-category {
+  margin-bottom: 20px;
+}
+
+.archive-category h3 {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 5px;
+  margin-bottom: 10px;
+}
+
+.no-archives {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 20px;
+}
+
+.hidden {
+  display: none;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .container {

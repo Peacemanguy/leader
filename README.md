@@ -9,6 +9,10 @@ This repository contains a Node.js application for GPU leaderboards with Docker 
 - Persistent data storage
 - One vote per IP address per category
 - Custom start script to run both servers in a single container
+- **Weekly leaderboard archiving system**
+  - Automatic archiving at the end of each week
+  - Historical data stored in a catalogued format
+  - View archived results by week or date range
 
 ## Docker Setup
 
@@ -70,6 +74,51 @@ ADMIN_PORT=6969
 ```
 
 These variables are used in the `docker-compose.yml` file and passed to the application.
+
+## Weekly Archiving System
+
+The system automatically archives the current leaderboard data at the end of each week (Sunday at 23:59). Each archive includes:
+
+- Week identifier (e.g., 2025-W17)
+- Start and end dates of the week
+- Timestamp when the archive was created
+- Complete snapshot of the leaderboard data
+
+### Accessing Archived Data
+
+#### User Interface
+
+Users can access archived leaderboards through the main interface by clicking the "Archives" button. From there, they can:
+
+1. Select a specific week from the dropdown menu
+2. Search archives by date range
+3. View detailed results for each archived period
+
+#### Admin Interface
+
+Administrators have additional capabilities:
+
+1. View all archived weeks
+2. Search archives by date range
+3. Manually trigger archiving of the current leaderboard
+4. View detailed statistics for each archived period
+
+### Running the Archiving System
+
+```bash
+# Start the weekly archiving scheduler
+npm run start-scheduler
+
+# Manually archive the current week
+npm run archive-week
+```
+
+### API Endpoints for Archives
+
+- `GET /api/archives/weeks` - Get list of all archived weeks
+- `GET /api/archives/week/:weekId` - Get archived data for a specific week
+- `GET /api/archives/week/:weekId/category/:category` - Get archived data for a specific week and category
+- `GET /api/archives/range?startDate=<date>&endDate=<date>` - Get archived data for a date range
 
 ## Security Notes
 

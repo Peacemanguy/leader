@@ -12,9 +12,14 @@
     <header>
       <h1>GPU Leaderboards by VRAM</h1>
       <p class="subtitle">Vote for the best GPUs in each VRAM category</p>
+      <div class="view-toggle">
+        <button id="current-view-btn" class="view-btn active">Current Leaderboard</button>
+        <button id="archives-view-btn" class="view-btn">Archives</button>
+      </div>
     </header>
 
-    <div class="tabs-container">
+    <div id="current-view">
+      <div class="tabs-container">
       <div class="tabs" id="category-tabs">
         <!-- Category tabs will be rendered here by script.js -->
       </div>
@@ -22,6 +27,43 @@
 
     <div id="leaderboards">
       <!-- Leaderboards will be rendered here by script.js -->
+      </div>
+    </div>
+
+    <div id="archives-view" class="hidden">
+      <div class="archives-container">
+        <h2>Archived Leaderboards</h2>
+        
+        <div class="archives-controls">
+          <div class="archives-selector">
+            <label for="week-select">Select Week:</label>
+            <select id="week-select">
+              <option value="">Select a week...</option>
+              <!-- Options will be populated by JavaScript -->
+            </select>
+          </div>
+          
+          <div class="date-range-selector">
+            <h3>Search by Date Range</h3>
+            <div class="date-inputs">
+              <div class="date-input">
+                <label for="start-date">Start Date:</label>
+                <input type="date" id="start-date">
+              </div>
+              <div class="date-input">
+                <label for="end-date">End Date:</label>
+                <input type="date" id="end-date">
+              </div>
+              <button id="search-archives-btn" class="search-btn">Search</button>
+            </div>
+          </div>
+        </div>
+        
+        <div id="archive-results">
+          <!-- Archive results will be displayed here -->
+          <p class="no-archives">Select a week or date range to view archived leaderboards</p>
+        </div>
+      </div>
     </div>
 
     <div class="info-panel">
@@ -37,5 +79,6 @@
   </div>
 
   <script src="script.js"></script>
+  <script src="archives.js"></script>
 </body>
 </html>
