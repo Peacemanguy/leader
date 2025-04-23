@@ -6,6 +6,7 @@ const path        = require('path');
 const requestIp   = require('request-ip');       // NEW
 const crypto      = require('crypto');           // we'll hash IPs before saving
 const archiver    = require('./leaderboard_archiver');
+const https       = require('https');            // For Hugging Face API requests
 
 const PORT         = process.env.PORT || 3000;
 const DATA_FILE    = path.join(__dirname, 'data', 'data.json');
@@ -212,6 +213,60 @@ app.get('/api/archives/range', (req, res) => {
     console.error('Error getting archived range:', error);
     res.status(500).json({ error: 'Failed to retrieve archived data for the specified range' });
   }
+});
+
+/* ---------- Hugging Face API Proxy ---------- */
+app.get('/api/huggingface/models', (req, res) => {
+  const query = req.query.query;
+  
+  if (!query || query.length < 2) {
+    return res.status(400).json({ error: 'Query must be at least 2 characters' });
+  }
+  
+  const options = {
+    hostname: 'huggingface.co',
+    path: `/api/models?search=${encodeURIComponent(query)}`,
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json'
+    }
+  };
+  
+  const hfRequest = https.request(options, (hfResponse) => {
+    let data = '';
+    
+    hfResponse.on('data', (chunk) => {
+      data += chunk;
+    });
+    
+    hfResponse.on('end', () => {
+      try {
+        const parsedData = JSON.parse(data);
+        
+        // Format the response to include only necessary information
+        const formattedResults = parsedData.map(model => ({
+          id: model.id,
+          modelId: model.modelId,
+          name: model.name || model.id,
+          author: model.author?.name || 'Unknown',
+          downloads: model.downloads || 0,
+          likes: model.likes || 0
+        })).slice(0, 10); // Limit to 10 results
+        
+        res.json(formattedResults);
+      } catch (error) {
+        console.error('Error parsing Hugging Face API response:', error);
+        res.status(500).json({ error: 'Failed to parse Hugging Face API response' });
+      }
+    });
+  });
+  
+  hfRequest.on('error', (error) => {
+    console.error('Error fetching from Hugging Face API:', error);
+    res.status(500).json({ error: 'Failed to fetch from Hugging Face API' });
+  });
+  
+  hfRequest.end();
 });
 
 /* ---------- start ---------- */

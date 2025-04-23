@@ -107,8 +107,18 @@ function createLeaderboardSection(category) {
     
     <div class="add-form-container">
       <form class="add-form" data-category="${category.key}">
-        <input class="add-input" type="text" placeholder="Add a new entry..." required />
-        <button type="submit" class="add-btn">Add & Vote</button>
+        <div class="input-container">
+          <input class="add-input" type="text" placeholder="Add a new entry..." required autocomplete="off" />
+          <div class="validation-indicator"></div>
+          <div class="dropdown-container">
+            <div class="dropdown-loading hidden">
+              <div class="spinner"></div>
+              <span>Loading results...</span>
+            </div>
+            <ul class="dropdown-results hidden"></ul>
+          </div>
+        </div>
+        <button type="submit" class="add-btn" disabled>Add & Vote</button>
         <span class="error add-error"></span>
       </form>
     </div>
@@ -255,6 +265,121 @@ function handleSortChange(sortOption) {
   });
 }
 
+// Hugging Face API validation
+let debounceTimer;
+let selectedModel = null;
+
+async function validateWithHuggingFace(query) {
+  if (!query || query.length < 2) return [];
+  
+  try {
+    // Use our server-side proxy endpoint to avoid CORS issues
+    const response = await fetch(`/api/huggingface/models?query=${encodeURIComponent(query)}`);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to fetch from Hugging Face API');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Hugging Face API error:', error);
+    return [];
+  }
+}
+
+function setupModelValidation(form) {
+  const input = form.querySelector('.add-input');
+  const dropdownContainer = form.querySelector('.dropdown-container');
+  const dropdownResults = form.querySelector('.dropdown-results');
+  const dropdownLoading = form.querySelector('.dropdown-loading');
+  const submitBtn = form.querySelector('.add-btn');
+  const validationIndicator = form.querySelector('.validation-indicator');
+  
+  input.addEventListener('input', function() {
+    const query = this.value.trim();
+    selectedModel = null;
+    
+    // Reset validation state
+    validationIndicator.className = 'validation-indicator';
+    submitBtn.disabled = true;
+    
+    // Clear previous results
+    dropdownResults.innerHTML = '';
+    dropdownResults.classList.add('hidden');
+    
+    if (query.length < 2) return;
+    
+    // Show loading indicator
+    dropdownLoading.classList.remove('hidden');
+    
+    // Debounce API calls
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(async () => {
+      try {
+        const results = await validateWithHuggingFace(query);
+        
+        // Hide loading indicator
+        dropdownLoading.classList.add('hidden');
+        
+        if (results.length === 0) {
+          dropdownResults.innerHTML = '<li class="no-results">No matching models found</li>';
+          dropdownResults.classList.remove('hidden');
+          return;
+        }
+        
+        // Populate dropdown with results
+        results.forEach(model => {
+          const li = document.createElement('li');
+          li.className = 'dropdown-item';
+          
+          // Create a more informative display with model name and author
+          const displayName = model.modelId || model.id || model.name;
+          const authorInfo = model.author && model.author !== 'Unknown' ? ` by ${model.author}` : '';
+          
+          li.innerHTML = `
+            <div class="dropdown-item-name">${displayName}</div>
+            ${authorInfo ? `<div class="dropdown-item-author">${authorInfo}</div>` : ''}
+          `;
+          
+          li.addEventListener('click', () => {
+            input.value = displayName;
+            selectedModel = model;
+            dropdownResults.classList.add('hidden');
+            
+            // Show validation success
+            validationIndicator.className = 'validation-indicator valid';
+            submitBtn.disabled = false;
+          });
+          dropdownResults.appendChild(li);
+        });
+        
+        dropdownResults.classList.remove('hidden');
+      } catch (error) {
+        console.error('Validation error:', error);
+        dropdownLoading.classList.add('hidden');
+        
+        // Show validation error
+        validationIndicator.className = 'validation-indicator invalid';
+      }
+    }, 300);
+  });
+  
+  // Hide dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!dropdownContainer.contains(e.target)) {
+      dropdownResults.classList.add('hidden');
+    }
+  });
+  
+  // Prevent form submission when pressing Enter in the input field
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !selectedModel) {
+      e.preventDefault();
+    }
+  });
+}
+
 async function handleAddEntry(form) {
   const category = form.getAttribute('data-category');
   const input = form.querySelector('.add-input');
@@ -268,9 +393,19 @@ async function handleAddEntry(form) {
     return;
   }
   
+  if (!selectedModel) {
+    errorSpan.textContent = 'Please select a validated model from the dropdown';
+    return;
+  }
+  
   try {
     const entry = await api('/api/add', { name, category });
     input.value = '';
+    selectedModel = null;
+    
+    // Reset validation state
+    form.querySelector('.validation-indicator').className = 'validation-indicator';
+    form.querySelector('.add-btn').disabled = true;
     
     // Update state
     state.lastVotedIds[category] = entry.id;
@@ -311,6 +446,11 @@ window.addEventListener('DOMContentLoaded', () => {
   CATEGORIES.forEach(cat => {
     const section = createLeaderboardSection(cat);
     leaderboardsDiv.appendChild(section);
+  });
+  
+  // Set up model validation for all forms
+  document.querySelectorAll('.add-form').forEach(form => {
+    setupModelValidation(form);
   });
   
   // Initial data load
